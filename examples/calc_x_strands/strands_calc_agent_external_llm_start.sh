@@ -1,0 +1,1 @@
+python strands_calc_agent_external_llm.py > logs/eval_strands_agents/$1 2>&1
