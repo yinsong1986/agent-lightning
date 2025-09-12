@@ -3,7 +3,9 @@
 set -e
 
 export N_GPUS=8
-export BASE_MODEL=deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B
+export BASE_MODEL=Qwen/Qwen2.5-3B-Instruct
+export agent_framework="autogen"
+export run_no="1st"
 export DATA_DIR=data
 export ROLLOUT_TP_SIZE=1
 export EXPERIMENT_NAME=calc_x
@@ -53,3 +55,11 @@ python -m agentlightning.verl \
     trainer.total_epochs=2 \
     actor_rollout_ref.actor.loss_agg_mode=seq-mean-token-sum-norm \
     algorithm.norm_adv_by_std_in_grpo=False $@
+
+model_name=${BASE_MODEL#*/}
+aws_account_id=$(aws sts get-caller-identity --query Account --output text)
+echo "Saving checkpoints of ${model_name}..."
+export fold="checkpoints_${agent_framework}_drgrpo_${run_no}_run_${model_name}"
+mv checkpoints $fold
+aws s3 sync $fold s3://sagemaker-us-east-1-${aws_account_id}/agent-lightning/examples/calc_x_strands/$fold
+rm -r $fold
